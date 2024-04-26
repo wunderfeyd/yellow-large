@@ -2,7 +2,7 @@
 // Improve file handling for large websites, https://github.com/wunderfeyd
     
 class YellowLarge {
-    const VERSION = "0.9.2";
+    const VERSION = "0.9.3";
     public $yellow;         // access to API
     
     // Handle initialisation
@@ -64,9 +64,9 @@ class YellowContentSerialize extends YellowContent {
         if (!isset($this->pages[$location]) && !is_string_empty($location)) {
             $this->yellow->toolbox->timerStart($time);
             $path = $this->yellow->lookup->findFileFromContentLocation($location, true);
+            list($modified, $fileCount) = $this->yellow->toolbox->getDirectoryInformation($path);
             $id = substru(md5($location.$path), 0, 15);
             $fileName = $this->yellow->system->get("coreWorkerDirectory")."large-$id.raw";
-            list($modified, $fileCount) = $this->yellow->toolbox->getDirectoryInformation($path);
             if ($fileCount>100) {
                 if ($this->yellow->toolbox->getFileModified($fileName)==$modified) {
                     $fileData = $this->yellow->toolbox->readFile($fileName);
@@ -88,15 +88,15 @@ class YellowContentSerialize extends YellowContent {
         return parent::scanLocation($location);
     }
     
-    // Return page collection with all pages
-    public function index($showInvisible = false, $multiLanguage = false) {
+    // Return page collection with content pages
+    public function index($showInvisible = false) {
         $this->yellow->toolbox->timerStart($time);
-        $rootLocation = $multiLanguage ? "" : $this->getRootLocation($this->yellow->page->location);
         $path = $this->yellow->system->get("coreContentDirectory");
-        $arguments = "index content showInvisible:".($showInvisible?"1":"0")." multiLanguage:".($multiLanguage?"1":"0");
-        $id = substru(md5($rootLocation.$arguments), 0, 15);
-        $fileName = $this->yellow->system->get("coreWorkerDirectory")."large-$id.raw";
         list($modified, $fileCount) = $this->yellow->toolbox->getDirectoryInformationRecursive($path);
+        $rootLocation = $this->getRootLocation($this->yellow->page->location);
+        $arguments = "index content:$rootLocation showInvisible:".($showInvisible?"1":"0");
+        $id = substru(md5($arguments), 0, 15);
+        $fileName = $this->yellow->system->get("coreWorkerDirectory")."large-$id.raw";
         if ($this->yellow->toolbox->getFileModified($fileName)==$modified) {
             $pages = new YellowPageCollection($this->yellow);
             $fileData = $this->yellow->toolbox->readFile($fileName);
@@ -121,13 +121,13 @@ class YellowContentSerialize extends YellowContent {
 class YellowMediaSerialize extends YellowMedia {
 
     // Return page collection with all media files
-    public function index($showInvisible = false, $multiPass = false) {
+    public function index($showInvisible = false) {
         $this->yellow->toolbox->timerStart($time);
         $path = $this->yellow->system->get("coreMediaDirectory");
+        list($modified, $fileCount) = $this->yellow->toolbox->getDirectoryInformationRecursive($path);
         $arguments = "index media showInvisible:".($showInvisible?"1":"0");
         $id = substru(md5($arguments), 0, 15);
         $fileName = $this->yellow->system->get("coreWorkerDirectory")."large-$id.raw";
-        list($modified, $fileCount) = $this->yellow->toolbox->getDirectoryInformationRecursive($path);
         if ($this->yellow->toolbox->getFileModified($fileName)==$modified) {
             $pages = new YellowPageCollection($this->yellow);
             $fileData = $this->yellow->toolbox->readFile($fileName);
